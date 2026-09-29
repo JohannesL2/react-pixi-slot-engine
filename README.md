@@ -1,16 +1,40 @@
-# React + Vite
+# React + PixiJS v8 Slot Engine
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A high-performance, modular **5x3 slot machine engine** built with **React**, **PixiJS v8**, **GSAP**, and **Bun**. 
 
-Currently, two official plugins are available:
+Designed as a modern iGaming frontend prototype featuring a gritty urban aesthetic, custom texture rendering, dynamic graphic masking, and decoupled reel animations.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+---
 
-## React Compiler
+## Tech Stack
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+* **Engine / Rendering:** [PixiJS v8](https://pixijs.com/) (WebGL / WebGPU)
+* **UI Framework:** [React 18](https://react.dev/)
+* **Animations & Easing:** [GSAP 3](https://greensock.com/gsap/)
+* **Build Tool & Bundler:** [Vite 5](https://vitejs.dev/)
+* **Runtime & Package Manager:** [Bun](https://bun.sh/)
 
-## Expanding the ESLint configuration
+---
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## Features
+
+* **5x3 Reel Grid**
+* **Graphic Mask Layering**
+* **Staggered Reel Animations**
+* **Symbol Recycling System:** Efficient infinite-scroll math that recycles off-screen sprites on loops.
+* **Texture Atlas Integration:** Optimized sprite loading via JSON texture sheets (`/public/assets/texture.json`).
+
+---
+
+## Getting Started
+
+### Prerequisites
+
+Ensure you have [Bun](https://bun.sh/) installed on your machine.
+
+### Installation & Run
+
+1. **Clone the repository:**
+   ```bash
+   git clone [https://github.com/johannesl2/react-pixi-slot-engine.git](https://github.com/johannesl2/react-pixi-slot-engine.git)
+   cd react-pixi-slot-engine
