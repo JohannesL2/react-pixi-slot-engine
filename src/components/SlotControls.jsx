@@ -57,7 +57,7 @@ export default function SlotControls({
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative', gap: '8px' }}>
+    <div className="slot-controls" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative', gap: '8px' }}>
       
       {/* Click area outside to close Auto Spin menu automatically */}
       {showAutoOptions && (
@@ -75,7 +75,7 @@ export default function SlotControls({
       )}
 
       {/* Payline selection */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '5px', flexWrap: 'wrap', justifyContent: 'center' }}>
+      <div className="slot-controls__section slot-controls__paylines" style={{ display: 'flex', alignItems: 'center', gap: '5px', flexWrap: 'wrap', justifyContent: 'center' }}>
         <strong style={{ color: '#f0f0f0', marginRight: '4px' }}>Paylines:</strong>
         {PAYLINES.map(({ id, color }) => {
           const selected = selectedPaylines.includes(id);
@@ -109,7 +109,7 @@ export default function SlotControls({
       </div>
 
       {/* Bet Adjustment (- / + / Max) */}
-      <div style={{ display: 'flex', alignItems: 'center', marginBottom: '10px', flexWrap: 'wrap', justifyContent: 'center', gap: '5px' }}>
+      <div className="slot-controls__section slot-controls__bet" style={{ display: 'flex', alignItems: 'center', marginBottom: '10px', flexWrap: 'wrap', justifyContent: 'center', gap: '5px' }}>
         <button
           onClick={handleDecreaseBet}
           disabled={controlsDisabled || currentBetIndex <= 0}
@@ -138,7 +138,7 @@ export default function SlotControls({
       </div>
 
       {/* Auto Spin */}
-      <div style={{ display: 'flex', alignItems: 'center', marginBottom: '10px', position: 'relative' }}>
+      <div className="slot-controls__section slot-controls__auto" style={{ display: 'flex', alignItems: 'center', marginBottom: '10px', position: 'relative' }}>
         <button
           onClick={handleAutoSpinClick}
           disabled={(isSpinning && autoSpinsLeft === 0) || (autoSpinsLeft === 0 && balance < totalBet)}
@@ -174,7 +174,7 @@ export default function SlotControls({
       </div>
 
       {/* Settings (Turbo & Sounds)*/}
-      <div style={{ display: 'flex', alignItems: 'center', marginBottom: '10px' }}>
+      <div className="slot-controls__section slot-controls__settings" style={{ display: 'flex', alignItems: 'center', marginBottom: '10px' }}>
         <button onClick={onToggleTurbo} disabled={isSpinning}>
           {isTurbo ? 'Disable Turbo' : 'Enable Turbo'}
         </button>
@@ -184,12 +184,12 @@ export default function SlotControls({
       </div>
 
       {/* Paytable */}
-      <div style={{ display: 'flex', alignItems: 'center', marginBottom: '10px' }}>
+      <div className="slot-controls__section slot-controls__paytable" style={{ display: 'flex', alignItems: 'center', marginBottom: '10px' }}>
         <button onClick={onOpenPaytable}>Paytable</button>
       </div>
 
       {/* Balance */}
-      <div style={{ marginTop: '5px', fontWeight: 'bold', color: '#f0f0f0' }}>
+      <div className="slot-controls__balance" style={{ marginTop: '5px', fontWeight: 'bold', color: '#f0f0f0' }}>
         <span>Balance: {balance.toLocaleString('sv-SE')} kr</span>
       </div>
     </div>

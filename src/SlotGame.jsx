@@ -251,28 +251,16 @@ export const SlotGame = () => {
   }, [isSpinning, autoSpinsLeft, handleSpin, isTurbo]);
 
   return (
-    <div
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        gap: '15px',
-        background: '#0a0a0c',
-        minHeight: '100vh',
-        padding: '20px 10px',
-        boxSizing: 'border-box',
-      }}
-    >
+    <div className="slot-game">
       {/* Win message */}
-      <div style={{ height: '35px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <h2 style={{ color: winInfo.totalWin > 0 ? '#00ff88' : '#888', margin: 0, fontFamily: 'sans-serif' }}>
+      <div className="slot-win-message">
+        <h2 className="slot-win-text" style={{ color: winInfo.totalWin > 0 ? '#00ff88' : '#888' }}>
           {winInfo.message}
         </h2>
       </div>
 
-      {/* Canvas + Spin-button next to each other */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-        <div style={{ position: 'relative', width: 900, height: 600, borderRadius: '12px', overflow: 'hidden', border: '2px solid #222' }}>
+      <div className="slot-game-board">
+        <div className="slot-game-canvas">
           <div ref={canvasRef} />
           <svg
             viewBox="0 0 900 600"
@@ -301,38 +289,33 @@ export const SlotGame = () => {
         </div>
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '10px', flexWrap: 'wrap', justifyContent: 'center' }}>
-      {/* Slot controls */}
-      <SlotControls
-        bet={bet}
-        onBetChange={setBet}
-        isSpinning={isSpinning}
-        autoSpinsLeft={autoSpinsLeft}
-        onStartAutoSpin={handleStartAutoSpin}
-        onStopAutoSpin={handleStopAutoSpin}
-        isTurbo={isTurbo}
-        onToggleTurbo={handleToggleTurbo}
-        isMuted={isMuted}
-        onToggleMute={handleToggleMute}
-        onOpenPaytable={handleOpenPaytable}
-        balance={balance}
-        selectedPaylines={selectedPaylines}
-        onTogglePayline={handleTogglePayline}
-        totalBet={totalBet}
-      />
+      <div className="slot-game-controls">
+        <SlotControls
+          bet={bet}
+          onBetChange={setBet}
+          isSpinning={isSpinning}
+          autoSpinsLeft={autoSpinsLeft}
+          onStartAutoSpin={handleStartAutoSpin}
+          onStopAutoSpin={handleStopAutoSpin}
+          isTurbo={isTurbo}
+          onToggleTurbo={handleToggleTurbo}
+          isMuted={isMuted}
+          onToggleMute={handleToggleMute}
+          onOpenPaytable={handleOpenPaytable}
+          balance={balance}
+          selectedPaylines={selectedPaylines}
+          onTogglePayline={handleTogglePayline}
+          totalBet={totalBet}
+        />
 
-      <button
+        <button
+          className="slot-spin-button"
           onClick={handleSpin}
           disabled={isSpinning || balance < totalBet}
           style={{
-            width: '220px',
-            height: '60px',
-            borderRadius: '12px',
             backgroundColor: isSpinning ? '#333' : '#ff0055',
             color: '#fff',
             border: '4px solid #ff3377',
-            fontSize: '20px',
-            fontWeight: 'bold',
             cursor: isSpinning || balance < totalBet ? 'not-allowed' : 'pointer',
             boxShadow: isSpinning ? 'none' : '0 0 20px rgba(255, 0, 85, 0.4)',
             transition: 'all 0.15s ease',
