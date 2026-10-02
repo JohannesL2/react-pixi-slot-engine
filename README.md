@@ -4,6 +4,8 @@ A high-performance, modular **5x3 slot machine engine** built with **React**, **
 
 Designed as a modern iGaming frontend prototype featuring a gritty urban aesthetic, custom texture rendering, dynamic graphic masking, and decoupled reel animations.
 
+<img width="100%" alt="screenshot-react-pixi-slot-engine" src="https://github.com/user-attachments/assets/20e0755c-6403-4c48-aa06-f4513f9c1d49" />
+
 ---
 
 ## Tech Stack
