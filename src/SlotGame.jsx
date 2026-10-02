@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { Application, Assets, Sprite, Container, Graphics } from 'pixi.js';
 import gsap from 'gsap';
+import SlotControls from './components/SlotControls';
 
 const SYMBOL_KEYS = [
   'dice.png',
@@ -14,13 +15,54 @@ const SYMBOL_KEYS = [
   'coin.png',
 ];
 
+const SYMBOL_CONFIGS = [
+  { id: 'dice.png', payouts: { 3: 5, 4: 15, 5: 50 } },
+  { id: 'spray_can.png', payouts: { 3: 5, 4: 20, 5: 60 } },
+  { id: 'letter_a.png', payouts: { 3: 2, 4: 5, 5: 15 } },
+  { id: 'letter_k.png', payouts: { 3: 2, 4: 5, 5: 15 } },
+  { id: 'crossed_heart.png', payouts: { 3: 10, 4: 30, 5: 100 } },
+  { id: 'boombox.png', payouts: { 3: 15, 4: 40, 5: 150 } },
+  { id: 'crown.png', payouts: { 3: 25, 4: 80, 5: 300 } },
+  { id: 'coin.png', payouts: { 3: 30, 4: 100, 5: 500 } },
+  { id: 'vs_wild.png', payouts: { 3: 50, 4: 200, 5: 1000 }, isWild: true },
+];
+
 export const SlotGame = () => {
   const canvasRef = useRef(null);
   const appRef = useRef(null);
   const reelsRef = useRef([]);
   const sheetRef = useRef(null);
 
+  // --- STATES ---
+  const [balance, setBalance] = useState(10000);
+  const [bet, setBet] = useState(10);
   const [isSpinning, setIsSpinning] = useState(false);
+  const [autoSpinsLeft, setAutoSpinsLeft] = useState(0);
+  const [isTurbo, setIsTurbo] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
+  const [showPaytable, setShowPaytable] = useState(false);
+  const [winInfo, setWinInfo] = useState({ totalWin: 0, message: '' });
+
+  // --- HANDLERS for SLOTCONTROLS ---
+  const handleStartAutoSpin = (count) => {
+    setAutoSpinsLeft(count);
+  };
+
+  const handleStopAutoSpin = () => {
+    setAutoSpinsLeft(0);
+  };
+
+  const handleToggleTurbo = () => {
+    setIsTurbo((prev) => !prev);
+  };
+
+  const handleToggleMute = () => {
+    setIsMuted((prev) => !prev);
+  };
+
+  const handleOpenPaytable = () => {
+    setShowPaytable(true);
+  };
 
   useEffect(() => {
     let active = true;
@@ -109,9 +151,13 @@ export const SlotGame = () => {
     };
   }, []);
 
-  const handleSpin = () => {
-    if (isSpinning || !sheetRef.current) return;
+  // --- SPIN FUNCTION ---
+  const handleSpin = useCallback(() => {
+    if (isSpinning || !sheetRef.current || balance < bet) return;
+
     setIsSpinning(true);
+    setBalance((prev) => prev - bet); // Dra av insats
+    setWinInfo({ totalWin: 0, message: '' });
 
     const stepY = 140;
     const symbolSize = 130;
@@ -119,8 +165,12 @@ export const SlotGame = () => {
     const startY = (600 - gridHeight) / 2 + symbolSize / 2;
     const bottomLimit = startY + 4 * stepY;
 
+    // Turbo settings
+    const duration = isTurbo ? 0.6 : 1.5;
+    const delayPerReel = isTurbo ? 0.05 : 0.12;
+
     reelsRef.current.forEach((reel, reelIndex) => {
-      const delay = reelIndex * 0.12;
+      const delay = reelIndex * delayPerReel;
 
       const currentY = reel.y;
       reel.y = 0;
@@ -130,13 +180,12 @@ export const SlotGame = () => {
 
       gsap.to(reel, {
         y: stepY * 12,
-        duration: 1.5,
+        duration: duration,
         delay: delay,
         ease: 'back.out(0.7)',
         onUpdate: () => {
           reel.children.forEach((child) => {
             const worldY = reel.y + child.y;
-            // När en symbol passerar under spelfältets botten flyttas den upp till toppen
             if (worldY > bottomLimit) {
               child.y -= stepY * 6;
               const randomKey = SYMBOL_KEYS[Math.floor(Math.random() * SYMBOL_KEYS.length)];
@@ -147,36 +196,152 @@ export const SlotGame = () => {
         onComplete: () => {
           if (reelIndex === reelsRef.current.length - 1) {
             setIsSpinning(false);
+
+            // Less auto spins left if any
+            if (autoSpinsLeft > 0) {
+              setAutoSpinsLeft((prev) => prev - 1);
+            }
           }
         },
       });
     });
-  };
+  }, [isSpinning, balance, bet, isTurbo, autoSpinsLeft]);
+
+  // --- AUTO SPIN LOOP EFFECT ---
+  useEffect(() => {
+    if (!isSpinning && autoSpinsLeft > 0) {
+      const timer = setTimeout(() => {
+        handleSpin();
+      }, isTurbo ? 200 : 600);
+      return () => clearTimeout(timer);
+    }
+  }, [isSpinning, autoSpinsLeft, handleSpin, isTurbo]);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px', background: '#0a0a0c', minHeight: '100vh', padding: '10px' }}>
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: '15px',
+        background: '#0a0a0c',
+        minHeight: '100vh',
+        padding: '20px 10px',
+        boxSizing: 'border-box',
+      }}
+    >
+      {/* Win message */}
+      <div style={{ height: '35px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <h2 style={{ color: winInfo.totalWin > 0 ? '#00ff88' : '#888', margin: 0, fontFamily: 'sans-serif' }}>
+          {winInfo.message}
+        </h2>
+      </div>
 
+      {/* Canvas + Spin-button next to each other */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+        <div ref={canvasRef} style={{ borderRadius: '12px', overflow: 'hidden', border: '2px solid #222' }} />
+      </div>
 
-      <div ref={canvasRef} style={{ borderRadius: '8px', overflow: 'hidden', border: '2px solid #222' }} />
+<div style={{display: 'flex', flexDirection: 'row'}}>
+      {/* Slot controls */}
+      <SlotControls
+        bet={bet}
+        onBetChange={setBet}
+        isSpinning={isSpinning}
+        autoSpinsLeft={autoSpinsLeft}
+        onStartAutoSpin={handleStartAutoSpin}
+        onStopAutoSpin={handleStopAutoSpin}
+        isTurbo={isTurbo}
+        onToggleTurbo={handleToggleTurbo}
+        isMuted={isMuted}
+        onToggleMute={handleToggleMute}
+        onOpenPaytable={handleOpenPaytable}
+        balance={balance}
+      />
 
       <button
-        onClick={handleSpin}
-        disabled={isSpinning}
-        style={{
-          minWidth: '220px',
-          padding: '16px 0',
-          fontSize: '20px',
-          fontWeight: 'bold',
-          color: '#fff',
-          backgroundColor: isSpinning ? '#444' : '#ff0055',
-          border: 'none',
-          borderRadius: '8px',
-          cursor: isSpinning ? 'not-allowed' : 'pointer',
-          transition: 'transform 0.1s',
-        }}
-      >
-        {isSpinning ? 'Spinning...' : 'SPIN'}
-      </button>
+          onClick={handleSpin}
+          disabled={isSpinning || balance < bet}
+          style={{
+            width: '220px',
+            height: '60px',
+            borderRadius: '12px',
+            backgroundColor: isSpinning ? '#333' : '#ff0055',
+            color: '#fff',
+            border: '4px solid #ff3377',
+            fontSize: '20px',
+            fontWeight: 'bold',
+            cursor: isSpinning || balance < bet ? 'not-allowed' : 'pointer',
+            boxShadow: isSpinning ? 'none' : '0 0 20px rgba(255, 0, 85, 0.4)',
+            transition: 'all 0.15s ease',
+          }}
+        >
+          {isSpinning ? 'Spinning...' : 'SPIN'}
+        </button>
+      </div>
+
+      {/* Win table Modal */}
+      {showPaytable && (
+        <div
+          onClick={() => setShowPaytable(false)}
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0,0,0,0.85)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 100,
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              backgroundColor: '#181822',
+              border: '1px solid #333345',
+              borderRadius: '12px',
+              padding: '24px',
+              maxWidth: '500px',
+              width: '90%',
+              color: '#fff',
+              fontFamily: 'sans-serif',
+            }}
+          >
+            <h2 style={{ marginTop: 0, color: '#00ff88' }}>Win Table</h2>
+            <p style={{ color: '#aaa', fontSize: '14px' }}>
+              Wins are calculated from left to right on the 5 winning lines.
+            </p>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', margin: '20px 0' }}>
+              {SYMBOL_CONFIGS.map((s) => (
+                <div key={s.id} style={{ backgroundColor: '#101018', padding: '8px', borderRadius: '6px' }}>
+                  <strong style={{ color: '#fff' }}>{s.id.replace('.png', '').toUpperCase()}</strong>
+                  <div style={{ fontSize: '12px', color: '#888', marginTop: '4px' }}>
+                    5x: {s.payouts[5]}x | 4x: {s.payouts[4]}x | 3x: {s.payouts[3]}x
+                  </div>
+                </div>
+              ))}
+            </div>
+            <button
+              onClick={() => setShowPaytable(false)}
+              style={{
+                width: '100%',
+                padding: '12px',
+                backgroundColor: '#ff0055',
+                border: 'none',
+                color: '#fff',
+                borderRadius: '6px',
+                fontWeight: 'bold',
+                cursor: 'pointer',
+              }}
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

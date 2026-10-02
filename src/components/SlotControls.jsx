@@ -51,7 +51,7 @@ export default function SlotControls({
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative' }}>
+    <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', position: 'relative' }}>
       
       {/* Click area outside to close Auto Spin menu automatically */}
       {showAutoOptions && (
@@ -146,7 +146,7 @@ export default function SlotControls({
       </div>
 
       {/* Balance */}
-      <div style={{ marginTop: '5px', fontWeight: 'bold' }}>
+      <div style={{ marginTop: '5px', fontWeight: 'bold', color: '#f0f0f0' }}>
         <span>Balance: {balance.toLocaleString('sv-SE')} kr</span>
       </div>
     </div>
