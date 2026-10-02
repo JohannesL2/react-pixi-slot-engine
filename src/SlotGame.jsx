@@ -2,30 +2,13 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { Application, Assets, Sprite, Container, Graphics } from 'pixi.js';
 import gsap from 'gsap';
 import SlotControls from './components/SlotControls';
-
-const SYMBOL_KEYS = [
-  'dice.png',
-  'spray_can.png',
-  'vs_wild.png',
-  'letter_a.png',
-  'letter_k.png',
-  'crossed_heart.png',
-  'boombox.png',
-  'crown.png',
-  'coin.png',
-];
-
-const SYMBOL_CONFIGS = [
-  { id: 'dice.png', payouts: { 3: 5, 4: 15, 5: 50 } },
-  { id: 'spray_can.png', payouts: { 3: 5, 4: 20, 5: 60 } },
-  { id: 'letter_a.png', payouts: { 3: 2, 4: 5, 5: 15 } },
-  { id: 'letter_k.png', payouts: { 3: 2, 4: 5, 5: 15 } },
-  { id: 'crossed_heart.png', payouts: { 3: 10, 4: 30, 5: 100 } },
-  { id: 'boombox.png', payouts: { 3: 15, 4: 40, 5: 150 } },
-  { id: 'crown.png', payouts: { 3: 25, 4: 80, 5: 300 } },
-  { id: 'coin.png', payouts: { 3: 30, 4: 100, 5: 500 } },
-  { id: 'vs_wild.png', payouts: { 3: 50, 4: 200, 5: 1000 }, isWild: true },
-];
+import {
+  calculateTotalBet,
+  evaluateGrid,
+  PAYLINES,
+  pickRandomSymbol,
+  SYMBOL_CONFIGS,
+} from './slotLogic';
 
 export const SlotGame = () => {
   const canvasRef = useRef(null);
@@ -36,12 +19,17 @@ export const SlotGame = () => {
   // --- STATES ---
   const [balance, setBalance] = useState(10000);
   const [bet, setBet] = useState(10);
+  const [selectedPaylines, setSelectedPaylines] = useState(() =>
+    PAYLINES.map(({ id }) => id)
+  );
+  const [winningPaylines, setWinningPaylines] = useState([]);
   const [isSpinning, setIsSpinning] = useState(false);
   const [autoSpinsLeft, setAutoSpinsLeft] = useState(0);
   const [isTurbo, setIsTurbo] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [showPaytable, setShowPaytable] = useState(false);
   const [winInfo, setWinInfo] = useState({ totalWin: 0, message: '' });
+  const totalBet = calculateTotalBet(bet, selectedPaylines);
 
   // --- HANDLERS for SLOTCONTROLS ---
   const handleStartAutoSpin = (count) => {
@@ -62,6 +50,17 @@ export const SlotGame = () => {
 
   const handleOpenPaytable = () => {
     setShowPaytable(true);
+  };
+
+  const handleTogglePayline = (lineId) => {
+    setWinningPaylines([]);
+    setSelectedPaylines((current) => {
+      if (current.includes(lineId)) {
+        return current.length > 1 ? current.filter((id) => id !== lineId) : current;
+      }
+      return PAYLINES.filter(({ id }) => current.includes(id) || id === lineId)
+        .map(({ id }) => id);
+    });
   };
 
   useEffect(() => {
@@ -125,7 +124,7 @@ export const SlotGame = () => {
         reelsContainer.addChild(reelContainer);
 
         for (let j = 0; j < 6; j++) {
-          const randomKey = SYMBOL_KEYS[Math.floor(Math.random() * SYMBOL_KEYS.length)];
+          const randomKey = pickRandomSymbol();
           const sprite = new Sprite(sheet.textures[randomKey]);
 
           sprite.anchor.set(0.5);
@@ -153,11 +152,17 @@ export const SlotGame = () => {
 
   // --- SPIN FUNCTION ---
   const handleSpin = useCallback(() => {
-    if (isSpinning || !sheetRef.current || balance < bet) return;
+    if (isSpinning || !sheetRef.current) return;
+    if (balance < totalBet) {
+      setAutoSpinsLeft(0);
+      setWinInfo({ totalWin: 0, message: 'Not enough balance for selected lines' });
+      return;
+    }
 
     setIsSpinning(true);
-    setBalance((prev) => prev - bet); // Dra av insats
+    setBalance((prev) => prev - totalBet);
     setWinInfo({ totalWin: 0, message: '' });
+    setWinningPaylines([]);
 
     const stepY = 140;
     const symbolSize = 130;
@@ -188,24 +193,52 @@ export const SlotGame = () => {
             const worldY = reel.y + child.y;
             if (worldY > bottomLimit) {
               child.y -= stepY * 6;
-              const randomKey = SYMBOL_KEYS[Math.floor(Math.random() * SYMBOL_KEYS.length)];
+              const randomKey = pickRandomSymbol();
               child.texture = sheetRef.current.textures[randomKey];
             }
           });
         },
         onComplete: () => {
           if (reelIndex === reelsRef.current.length - 1) {
+            const stoppedGrid = reelsRef.current.map((stoppedReel) =>
+              [0, 1, 2].map((row) => {
+                const targetY = startY + row * stepY;
+                const stoppedSymbol = stoppedReel.children.reduce((closest, child) => {
+                  const distance = Math.abs(stoppedReel.y + child.y - targetY);
+                  return distance < closest.distance ? { child, distance } : closest;
+                }, { child: null, distance: Infinity }).child;
+                const symbolKey = SYMBOL_CONFIGS.find(
+                  ({ id }) => sheetRef.current.textures[id] === stoppedSymbol.texture
+                )?.id;
+                if (!symbolKey) {
+                  throw new Error('Unable to identify a stopped reel symbol');
+                }
+                return symbolKey;
+              })
+            );
+            const { totalWin, wins } = evaluateGrid(stoppedGrid, bet, selectedPaylines);
+            const wonLines = wins.map(({ line }) => line);
+
+            if (totalWin > 0) {
+              setBalance((prev) => prev + totalWin);
+              setWinInfo({
+                totalWin,
+                message: `WIN: ${totalWin.toLocaleString('sv-SE')} kr! (Line${wonLines.length > 1 ? 's' : ''} ${wonLines.join(', ')})`,
+              });
+            }
+            setWinningPaylines(wonLines);
+
             setIsSpinning(false);
 
             // Less auto spins left if any
             if (autoSpinsLeft > 0) {
-              setAutoSpinsLeft((prev) => prev - 1);
+              setAutoSpinsLeft((prev) => Math.max(0, prev - 1));
             }
           }
         },
       });
     });
-  }, [isSpinning, balance, bet, isTurbo, autoSpinsLeft]);
+  }, [isSpinning, balance, totalBet, bet, selectedPaylines, isTurbo, autoSpinsLeft]);
 
   // --- AUTO SPIN LOOP EFFECT ---
   useEffect(() => {
@@ -239,10 +272,36 @@ export const SlotGame = () => {
 
       {/* Canvas + Spin-button next to each other */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-        <div ref={canvasRef} style={{ borderRadius: '12px', overflow: 'hidden', border: '2px solid #222' }} />
+        <div style={{ position: 'relative', width: 900, height: 600, borderRadius: '12px', overflow: 'hidden', border: '2px solid #222' }}>
+          <div ref={canvasRef} />
+          <svg
+            viewBox="0 0 900 600"
+            aria-hidden="true"
+            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none' }}
+          >
+            {PAYLINES.filter(({ id }) => selectedPaylines.includes(id)).map((payline) => {
+              const isWinner = winningPaylines.includes(payline.id);
+              const points = payline.rows
+                .map((row, reelIndex) => `${165 + reelIndex * 140},${155 + row * 140}`)
+                .join(' ');
+              return (
+                <polyline
+                  key={payline.id}
+                  points={points}
+                  fill="none"
+                  stroke={payline.color}
+                  strokeWidth={isWinner ? 8 : 4}
+                  strokeOpacity={isWinner ? 1 : 0.55}
+                  strokeLinejoin="round"
+                  strokeLinecap="round"
+                />
+              );
+            })}
+          </svg>
+        </div>
       </div>
 
-<div style={{display: 'flex', flexDirection: 'row'}}>
+      <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '10px', flexWrap: 'wrap', justifyContent: 'center' }}>
       {/* Slot controls */}
       <SlotControls
         bet={bet}
@@ -257,11 +316,14 @@ export const SlotGame = () => {
         onToggleMute={handleToggleMute}
         onOpenPaytable={handleOpenPaytable}
         balance={balance}
+        selectedPaylines={selectedPaylines}
+        onTogglePayline={handleTogglePayline}
+        totalBet={totalBet}
       />
 
       <button
           onClick={handleSpin}
-          disabled={isSpinning || balance < bet}
+          disabled={isSpinning || balance < totalBet}
           style={{
             width: '220px',
             height: '60px',
@@ -271,7 +333,7 @@ export const SlotGame = () => {
             border: '4px solid #ff3377',
             fontSize: '20px',
             fontWeight: 'bold',
-            cursor: isSpinning || balance < bet ? 'not-allowed' : 'pointer',
+            cursor: isSpinning || balance < totalBet ? 'not-allowed' : 'pointer',
             boxShadow: isSpinning ? 'none' : '0 0 20px rgba(255, 0, 85, 0.4)',
             transition: 'all 0.15s ease',
           }}
@@ -312,7 +374,7 @@ export const SlotGame = () => {
           >
             <h2 style={{ marginTop: 0, color: '#00ff88' }}>Win Table</h2>
             <p style={{ color: '#aaa', fontSize: '14px' }}>
-              Wins are calculated from left to right on the 5 winning lines.
+              Wins are checked left to right on each selected payline. Each line pays its multiplier times the bet per line.
             </p>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', margin: '20px 0' }}>
               {SYMBOL_CONFIGS.map((s) => (
