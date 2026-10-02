@@ -361,6 +361,7 @@ export const SlotGame = () => {
       {showPaytable && (
         <div
           onClick={() => setShowPaytable(false)}
+          role="presentation"
           style={{
             position: 'fixed',
             top: 0,
@@ -376,45 +377,86 @@ export const SlotGame = () => {
         >
           <div
             onClick={(e) => e.stopPropagation()}
+            onKeyDown={(event) => {
+              if (event.key === 'Escape') setShowPaytable(false);
+            }}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="win-table-title"
             style={{
               backgroundColor: '#181822',
-              border: '1px solid #333345',
-              borderRadius: '12px',
-              padding: '24px',
-              maxWidth: '500px',
+              border: '1px solid #3b3b50',
+              borderRadius: '14px',
+              padding: '20px',
+              maxWidth: '420px',
               width: '90%',
+              maxHeight: 'min(80vh, 680px)',
+              overflowY: 'auto',
               color: '#fff',
               fontFamily: 'sans-serif',
+              boxShadow: '0 16px 48px rgba(0,0,0,0.55)',
             }}
           >
-            <h2 style={{ marginTop: 0, color: '#00ff88' }}>Win Table</h2>
-            <p style={{ color: '#aaa', fontSize: '14px' }}>
-              Wins are checked left to right on each selected payline. Each line pays its multiplier times the bet per line.
-            </p>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', margin: '20px 0' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+              <h2 id="win-table-title" style={{ margin: 0, color: '#00ff88', fontSize: '22px' }}>Win Table</h2>
+              <button
+                type="button"
+                autoFocus
+                aria-label="Close win table"
+                onClick={() => setShowPaytable(false)}
+                style={{
+                  width: '36px',
+                  height: '36px',
+                  flexShrink: 0,
+                  border: '1px solid #454558',
+                  borderRadius: '8px',
+                  backgroundColor: '#242430',
+                  color: '#fff',
+                  fontSize: '22px',
+                  cursor: 'pointer',
+                }}
+              >
+                ×
+              </button>
+            </div>
+            <div style={{ margin: '14px 0', padding: '12px', borderRadius: '8px', backgroundColor: '#101018', color: '#ccc', fontSize: '13px', lineHeight: 1.5 }}>
+              Payouts are shown <strong style={{ color: '#fff' }}>per winning payline</strong> at your current bet of <strong style={{ color: '#fff' }}>{bet.toLocaleString('sv-SE')} kr</strong> per line. Wins on selected paylines are added together; your total bet is {totalBet.toLocaleString('sv-SE')} kr across {selectedPaylines.length} lines.
+            </div>
+            <div style={{ display: 'grid', gap: '8px', margin: '16px 0' }}>
               {SYMBOL_CONFIGS.map((s) => (
-                <div key={s.id} style={{ backgroundColor: '#101018', padding: '8px', borderRadius: '6px' }}>
-                  <strong style={{ color: '#fff' }}>{s.id.replace('.png', '').toUpperCase()}</strong>
-                  <div style={{ fontSize: '12px', color: '#888', marginTop: '4px' }}>
-                    5x: {s.payouts[5]}x | 4x: {s.payouts[4]}x | 3x: {s.payouts[3]}x
+                <div key={s.id} style={{ backgroundColor: '#101018', padding: '10px', borderRadius: '8px' }}>
+                  <strong style={{ color: '#fff', fontSize: '13px' }}>{s.id.replace('.png', '').replaceAll('_', ' ').toUpperCase()}</strong>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '6px', marginTop: '8px' }}>
+                    {[5, 4, 3].map((matchCount) => (
+                      <div key={matchCount} style={{ minWidth: 0, padding: '6px 4px', borderRadius: '6px', backgroundColor: '#1b1b27', textAlign: 'center' }}>
+                        <div style={{ color: '#999', fontSize: '10px' }}>{matchCount} symbols</div>
+                        <div style={{ color: '#00ff88', fontSize: '12px', fontWeight: 'bold', overflowWrap: 'anywhere' }}>
+                          {(bet * s.payouts[matchCount]).toLocaleString('sv-SE')} kr
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
               ))}
             </div>
+            <p style={{ margin: '0 0 16px', color: '#aaa', fontSize: '12px', lineHeight: 1.5 }}>
+              Wins are checked left to right. VS WILD substitutes for other symbols; the wild payout applies when the winning combination is all wilds.
+            </p>
             <button
+              type="button"
               onClick={() => setShowPaytable(false)}
               style={{
                 width: '100%',
-                padding: '12px',
+                padding: '11px',
                 backgroundColor: '#ff0055',
                 border: 'none',
                 color: '#fff',
-                borderRadius: '6px',
+                borderRadius: '8px',
                 fontWeight: 'bold',
                 cursor: 'pointer',
               }}
             >
-              Close
+              Done
             </button>
           </div>
         </div>
