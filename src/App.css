@@ -204,6 +204,26 @@
   font-family: sans-serif;
 }
 
+.slot-game--fullscreen {
+  padding: 0 12px 12px;
+  background: #000;
+}
+
+.slot-game--fullscreen .slot-game-board {
+  flex: 1 1 auto;
+  width: 100%;
+  min-height: 0;
+}
+
+.slot-game--fullscreen .slot-game-canvas {
+  width: min(100vw - 24px, calc((100dvh - 220px) * 1.5));
+  max-width: calc(100vw - 24px);
+  max-height: calc(100dvh - 220px);
+  height: auto;
+  aspect-ratio: 3 / 2;
+  border-radius: 0;
+}
+
 .slot-win-message {
   display: flex;
   flex: 0 0 auto;

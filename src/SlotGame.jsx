@@ -12,6 +12,7 @@ import {
 
 export const SlotGame = () => {
   const canvasRef = useRef(null);
+  const gameRef = useRef(null);
   const appRef = useRef(null);
   const reelsRef = useRef([]);
   const sheetRef = useRef(null);
@@ -27,6 +28,7 @@ export const SlotGame = () => {
   const [autoSpinsLeft, setAutoSpinsLeft] = useState(0);
   const [isTurbo, setIsTurbo] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const [showPaytable, setShowPaytable] = useState(false);
   const [winInfo, setWinInfo] = useState({ totalWin: 0, message: '' });
   const totalBet = calculateTotalBet(bet, selectedPaylines);
@@ -48,6 +50,22 @@ export const SlotGame = () => {
     setIsMuted((prev) => !prev);
   };
 
+  const handleToggleFullscreen = async () => {
+    const target = gameRef.current;
+
+    if (!target) return;
+
+    try {
+      if (!document.fullscreenElement) {
+        await target.requestFullscreen();
+      } else {
+        await document.exitFullscreen();
+      }
+    } catch (error) {
+      console.error('Unable to toggle fullscreen mode:', error);
+    }
+  };
+
   const handleOpenPaytable = () => {
     setShowPaytable(true);
   };
@@ -62,6 +80,18 @@ export const SlotGame = () => {
         .map(({ id }) => id);
     });
   };
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(Boolean(document.fullscreenElement));
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    };
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -251,7 +281,7 @@ export const SlotGame = () => {
   }, [isSpinning, autoSpinsLeft, handleSpin, isTurbo]);
 
   return (
-    <div className="slot-game">
+    <div ref={gameRef} className={`slot-game${isFullscreen ? ' slot-game--fullscreen' : ''}`}>
       {/* Win message */}
       <div className="slot-win-message">
         <h2 className="slot-win-text" style={{ color: winInfo.totalWin > 0 ? '#00ff88' : '#888' }}>
@@ -301,6 +331,8 @@ export const SlotGame = () => {
           onToggleTurbo={handleToggleTurbo}
           isMuted={isMuted}
           onToggleMute={handleToggleMute}
+          isFullscreen={isFullscreen}
+          onToggleFullscreen={handleToggleFullscreen}
           onOpenPaytable={handleOpenPaytable}
           balance={balance}
           selectedPaylines={selectedPaylines}
