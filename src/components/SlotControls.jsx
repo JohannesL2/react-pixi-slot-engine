@@ -15,6 +15,8 @@ export default function SlotControls({
   onToggleTurbo,
   isMuted,
   onToggleMute,
+  isFullscreen,
+  onToggleFullscreen,
   onOpenPaytable,
   balance = 10000,
   selectedPaylines,
@@ -174,12 +176,15 @@ export default function SlotControls({
       </div>
 
       {/* Settings (Turbo & Sounds)*/}
-      <div className="slot-controls__section slot-controls__settings" style={{ display: 'flex', alignItems: 'center', marginBottom: '10px' }}>
+      <div className="slot-controls__section slot-controls__settings" style={{ display: 'flex', alignItems: 'center', marginBottom: '10px', flexWrap: 'wrap', justifyContent: 'center', gap: '10px' }}>
         <button onClick={onToggleTurbo} disabled={isSpinning}>
           {isTurbo ? 'Disable Turbo' : 'Enable Turbo'}
         </button>
-        <button onClick={onToggleMute} style={{ marginLeft: '10px' }}>
+        <button onClick={onToggleMute}>
           {isMuted ? 'Unmute' : 'Mute'}
+        </button>
+        <button onClick={onToggleFullscreen}>
+          {isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
         </button>
       </div>
 
